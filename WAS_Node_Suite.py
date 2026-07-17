@@ -7470,6 +7470,10 @@ class WAS_Image_Save:
                     except Exception:
                         pass
                 exif_data = img_exif.tobytes()
+                
+                if extension in ['jpg', 'jpeg'] and len(exif_data) > 65533:
+                    cstr(f"Warning: Workflow EXIF data is too large ({len(exif_data)} bytes) for JPEG format. Saving without workflow metadata. Use PNG or WebP for large workflows.").warning.print()
+                    exif_data = b""
             else:
                 metadata = PngInfo()
                 if embed_workflow == 'true':
