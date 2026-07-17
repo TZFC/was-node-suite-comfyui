@@ -7449,7 +7449,7 @@ class WAS_Image_Save:
             img = Image.fromarray(np.clip(i, 0, 255).astype(np.uint8))
 
             # Delegate metadata/pnginfo
-            if extension == 'webp':
+            if extension in ['webp', 'jpg', 'jpeg']:
                 img_exif = img.getexif()
                 if embed_workflow == 'true':
                     workflow_metadata = ''
@@ -7461,6 +7461,14 @@ class WAS_Image_Save:
                         for x in extra_pnginfo:
                             workflow_metadata += json.dumps(extra_pnginfo[x])
                     img_exif[0x010e] = "Workflow:" + workflow_metadata
+                    
+                    try:
+                        import PIL.ExifTags
+                        exif_ifd = img_exif.get_ifd(PIL.ExifTags.IFD.Exif)
+                        user_comment = "Workflow:" + workflow_metadata + "\nPrompt:" + prompt_str
+                        exif_ifd[0x9286] = b'UNICODE\x00' + user_comment.encode('utf-16le')
+                    except Exception:
+                        pass
                 exif_data = img_exif.tobytes()
             else:
                 metadata = PngInfo()
@@ -7488,7 +7496,7 @@ class WAS_Image_Save:
                 output_file = os.path.abspath(os.path.join(output_path, file))
                 if extension in ["jpg", "jpeg"]:
                     img.save(output_file,
-                             quality=quality, optimize=optimize_image, dpi=(dpi, dpi))
+                             quality=quality, optimize=optimize_image, dpi=(dpi, dpi), exif=exif_data)
                 elif extension == 'webp':
                     img.save(output_file,
                              quality=quality, lossless=lossless_webp, exif=exif_data)
