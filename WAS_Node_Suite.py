@@ -7461,11 +7461,18 @@ class WAS_Image_Save:
                         for x in extra_pnginfo:
                             workflow_metadata += json.dumps(extra_pnginfo[x])
                     img_exif[0x010e] = "Workflow:" + workflow_metadata
-                
                 exif_data = img_exif.tobytes()
                 
                 if extension in ['jpg', 'jpeg'] and len(exif_data) > 65533:
-                        cstr(f"Warning: Workflow EXIF data is too large ({len(exif_data)} bytes) for JPEG format. Saving without workflow metadata. Use PNG or WebP for large workflows.").warning.print()
+                    if 0x010e in img_exif:
+                        del img_exif[0x010e]
+                        try:
+                            exif_data = img_exif.tobytes()
+                        except Exception:
+                            pass
+                            
+                    if len(exif_data) > 65533:
+                        cstr(f"Warning: Prompt EXIF data is too large ({len(exif_data)} bytes) for JPEG format. Saving without metadata. Use PNG or WebP for large workflows.").warning.print()
                         exif_data = b""
             else:
                 metadata = PngInfo()
